@@ -1,11 +1,37 @@
 import { Image, StyleSheet, Platform } from 'react-native';
-
+import { useState, useEffect } from 'react'
 import { HelloWave } from '@/components/HelloWave';
 import ParallaxScrollView from '@/components/ParallaxScrollView';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
+import Card from '@/components/card'
+
+  const cardData = [
+    {
+      title: 'Product A',
+      description: 'A fantastic product with amazing features.',
+      imageUrl: 'https://via.placeholder.com/150',
+      id: 'productA',
+    },
+    {
+      title: 'Service B',
+      description: 'Our top-notch service will exceed your expectations.',
+      id: 'productA',
+    },
+    // ... more card data
+  ];
+  
 
 export default function HomeScreen() {
+  const [currentDate, setCurrentDate] = useState('');
+
+  useEffect(() => {
+    const now = new Date();
+    const options = { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' };
+    const formattedDate = now.toLocaleDateString(undefined, options); // Default locale
+    setCurrentDate(formattedDate);
+  }, []);
+
   return (
     <ParallaxScrollView
       headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
@@ -18,10 +44,21 @@ export default function HomeScreen() {
       <ThemedView style={styles.titleContainer}>
         <ThemedText type="title">Hari Ini</ThemedText>
       </ThemedView>
+      <ThemedView style={styles.titleContainer}>
+        <ThemedText type="subtitle">{currentDate}</ThemedText>
+      </ThemedView>
       <ThemedView style={styles.stepContainer}>
         <ThemedText type="subtitle">Olahraga</ThemedText>
         <ThemedText>
-          Gym sesuai hari.
+        {cardData.map((card, index) => (
+          <Card
+            key={index}
+            title={card.title}
+            description={card.description}
+            imageUrl={card.imageUrl}
+            item={card}
+          />
+        ))}
         </ThemedText>
       </ThemedView>
       <ThemedView style={styles.stepContainer}>

@@ -1,12 +1,12 @@
 import { Tabs } from 'expo-router';
 import React from 'react';
 import { Platform } from 'react-native';
-
 import { HapticTab } from '@/components/HapticTab';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import TabBarBackground from '@/components/ui/TabBarBackground';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
+import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
@@ -34,10 +34,24 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="explore"
+        name="workout"
         options={{
-          title: 'Nilai',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="paperplane.fill" color={color} />,
+          title: 'Workout',
+          tabBarIcon: ({ color }) => <FontAwesome5 name="dumbbell" size={22} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="spirit"
+        options={{
+          title: 'Spirit',
+          tabBarIcon: ({ color }) => <FontAwesome5 name="pray" size={24} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="bahasa"
+        options={{
+          title: 'Bahasa',
+          tabBarIcon: ({ color }) => <FontAwesome5 name="language" size={24} color={color} />,
         }}
       />
     </Tabs>
