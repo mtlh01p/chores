@@ -27,8 +27,13 @@ export default function HomeScreen() {
 
   useEffect(() => {
     const now = new Date();
-    const options = { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' };
-    const formattedDate = now.toLocaleDateString(undefined, options); // Default locale
+    const options: Intl.DateTimeFormatOptions = {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    };
+    const formattedDate = now.toLocaleString('id-ID', options);
     setCurrentDate(formattedDate);
   }, []);
 
