@@ -119,7 +119,6 @@ useEffect(() => {
           await AsyncStorage.setItem('checklist_history', JSON.stringify(parsedHistory));
         }
 
-        // Reset checklist
         const resetItems = items.map(item => ({
           ...item,
           isChecked: false,
@@ -202,8 +201,8 @@ useEffect(() => {
               </TouchableOpacity>
               ))} 
        </View>
-       <TouchableOpacity style={[styles.button]}>
-        <Text style={styles.buttonTitle} onPress={movetoHistory}>Lihat Riwayat</Text>
+       <TouchableOpacity style={[styles.button]} onPress={movetoHistory}>
+        <Text style={styles.buttonTitle}>Lihat Riwayat</Text>
        </TouchableOpacity>
        <ThemedText type="subtitle">{currentDay} dalam Pekan {selectedMasa}</ThemedText>
       <ThemedText>

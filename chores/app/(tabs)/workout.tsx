@@ -83,7 +83,7 @@ export default function WorkoutScreen() {
         </ThemedView>
         </>
       )}
-      {(dayIndex === 5 || dayIndex === 1) && (
+      {(dayIndex === 2 || dayIndex === 5) && (
         <>
         <ThemedView style={styles.titleContainer}>
         <ThemedText type="subtitle">Hari Kaki dan Punggung</ThemedText>
@@ -103,12 +103,14 @@ export default function WorkoutScreen() {
         </ThemedText>
         </>
       )}    
-      {(dayIndex === 2) && (
+      {(dayIndex === 1) && (
         <>
         <ThemedView style={styles.titleContainer}>
         <ThemedText type="subtitle">Hari Istirahat</ThemedText>
+        </ThemedView>
         <ThemedText>Tidak ada latihan hari ini. Selamat beristirahat.</ThemedText>
         <ThemedText type="subtitle">Menggantikan Hari-Hari Lalu?</ThemedText>
+        <ThemedText>
         {workData.map(card => (
             <Card
               key={card.id}
@@ -118,7 +120,7 @@ export default function WorkoutScreen() {
               item={card}
             />
         ))}
-        </ThemedView>
+        </ThemedText>
         </>
       )}
     </ParallaxScrollView>

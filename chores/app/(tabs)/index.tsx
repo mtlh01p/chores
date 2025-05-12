@@ -65,7 +65,7 @@ export default function HomeScreen() {
         getSpecificCard('chest-arms')
         : dayIndex === 4 || dayIndex === 0 ? 
         getSpecificCard('abs-shoulders')
-        : dayIndex === 5 || dayIndex === 1 ? 
+        : dayIndex === 5 || dayIndex === 2 ? 
         getSpecificCard('legs-back')
         : <ThemedText>Istirahat</ThemedText>}
         </ThemedText>

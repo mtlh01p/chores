@@ -284,18 +284,18 @@ export function WorkoutText({ itemId }: { itemId: string }) {
 
 export const workData = [
   {
+    title: 'Kaki dan Punggung',
+    description: 'Selasa dan Jumat',
+    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/6/60/Trapezius.png',
+    text: <WorkoutText itemId='legs-back'/>,
+    id: 'legs-back',
+  },
+  {
     title: 'Dada dan Lengan',
     description: 'Rabu dan Sabtu',
     imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/4/41/Flexi%C3%B3n_del_brazo.png',
     text: <WorkoutText itemId='chest-arms'/>,
     id: 'chest-arms',
-  },
-  {
-    title: 'Kaki dan Punggung',
-    description: 'Senin dan Jumat',
-    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/6/60/Trapezius.png',
-    text: <WorkoutText itemId='legs-back'/>,
-    id: 'legs-back',
   },
   {
     title: 'Perut dan Bahu',
