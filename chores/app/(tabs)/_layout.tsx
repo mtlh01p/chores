@@ -54,6 +54,13 @@ export default function TabLayout() {
           tabBarIcon: ({ color }) => <FontAwesome5 name="language" size={24} color={color} />,
         }}
       />
+      <Tabs.Screen
+        name="settings"
+        options={{
+          title: 'Pengaturan',
+          tabBarIcon: ({ color }) => <FontAwesome5 name="cog" size={24} color={color} />,
+        }}
+      />
     </Tabs>
   );
 }

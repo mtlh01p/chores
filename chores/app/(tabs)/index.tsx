@@ -5,23 +5,9 @@ import ParallaxScrollView from '@/components/ParallaxScrollView';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import Card from '@/components/card'
-
-  const cardData = [
-    {
-      title: 'Product A',
-      description: 'A fantastic product with amazing features.',
-      imageUrl: 'https://via.placeholder.com/150',
-      id: 'productA',
-    },
-    {
-      title: 'Service B',
-      description: 'Our top-notch service will exceed your expectations.',
-      id: 'productA',
-    },
-    // ... more card data
-  ];
+import { workData } from '@/components/workouts';
+import { prayData } from '@/components/prayers';
   
-
 export default function HomeScreen() {
   const [currentDate, setCurrentDate] = useState('');
 
@@ -36,6 +22,26 @@ export default function HomeScreen() {
     const formattedDate = now.toLocaleString('id-ID', options);
     setCurrentDate(formattedDate);
   }, []);
+
+  const getDayIndex = () => {
+    const now = new Date();
+    return now.getDay();
+  };
+  const dayIndex = getDayIndex();
+  const getSpecificCard = (id: string) => {
+    const card = workData.find(card => card.id === id);
+    if (card) {
+      return (
+        <Card
+          key={card.id}
+          title={card.title}
+          description={card.description}
+          imageUrl={card.imageUrl}
+          item={card}
+        />
+      );
+    }
+  };
 
   return (
     <ParallaxScrollView
@@ -55,15 +61,13 @@ export default function HomeScreen() {
       <ThemedView style={styles.stepContainer}>
         <ThemedText type="subtitle">Olahraga</ThemedText>
         <ThemedText>
-        {cardData.map((card, index) => (
-          <Card
-            key={index}
-            title={card.title}
-            description={card.description}
-            imageUrl={card.imageUrl}
-            item={card}
-          />
-        ))}
+        {dayIndex === 3 || dayIndex === 6 ? 
+        getSpecificCard('chest-arms')
+        : dayIndex === 4 || dayIndex === 0 ? 
+        getSpecificCard('abs-shoulders')
+        : dayIndex === 5 || dayIndex === 1 ? 
+        getSpecificCard('legs-back')
+        : <ThemedText>Istirahat</ThemedText>}
         </ThemedText>
       </ThemedView>
       <ThemedView style={styles.stepContainer}>

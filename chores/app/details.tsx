@@ -20,7 +20,8 @@ function DetailsScreen() {
 
   if (!selectedItem) {
     return (
-      <View style={styles.outerContainer}>
+      <>
+      <Stack.Screen options={{ headerShown: false }} />
       <AntDesign name="arrowleft" size={24} color="white" style={[styles.backIcon, { top: statusBarHeight + 10, left:20, zIndex:100,}]} onPress={() => router.back()} />
       <ScrollView style={styles.scroll}>
         <View style={[styles.container, { paddingTop: statusBarHeight + 10 }]}>
@@ -28,7 +29,7 @@ function DetailsScreen() {
           <Text style={styles.detailText}>Silakan kembali ke halaman utama.</Text>
         </View>
       </ScrollView>
-      </View>
+      </>
     );
   }
 
@@ -48,7 +49,9 @@ function DetailsScreen() {
             </>
           )}
           {selectedItem.id && workData.some(item => item.id === selectedItem.id) && (
+            <>
             <WorkoutText itemId={selectedItem.id} />
+            </>
           )}
         </View>
       </ScrollView>

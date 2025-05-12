@@ -1,17 +1,40 @@
-import { StyleSheet, Image, Platform } from 'react-native';
-
+import { StyleSheet, Image, Platform, TouchableOpacity, Text } from 'react-native';
+import { useState, useEffect } from 'react';
 import { Collapsible } from '@/components/Collapsible';
 import { ExternalLink } from '@/components/ExternalLink';
 import ParallaxScrollView from '@/components/ParallaxScrollView';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { IconSymbol } from '@/components/ui/IconSymbol';
+import Card from '@/components/card'
 import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
+import { workData } from '@/components/workouts';
+import { useRouter } from 'expo-router';
 
-export default function TabTwoScreen() {
+export default function WorkoutScreen() {
+      const [currentDate, setCurrentDate] = useState('');
+    
+      useEffect(() => {
+        const now = new Date();
+        const options: Intl.DateTimeFormatOptions = {
+          weekday: 'long',
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+        };
+        const formattedDate = now.toLocaleString('id-ID', options);
+        setCurrentDate(formattedDate);
+      }, []);
+    
+      const getDayIndex = () => {
+        const now = new Date();
+        return now.getDay();
+      };
+      const dayIndex = getDayIndex();
+
   return (
     <ParallaxScrollView
-      headerBackgroundColor={{ light: '#D0D0D0', dark: '#353636' }}
+      headerBackgroundColor={{ light: '#D0D0D0', dark: '#277db3' }}
       headerImage={
         <FontAwesome5
           size={310}
@@ -24,76 +47,97 @@ export default function TabTwoScreen() {
         <ThemedText type="title">Workout</ThemedText>
       </ThemedView>
       <ThemedText>Utamakan pengendalian diri. Lakukan yang maksimal. Tubuhmu adalah bait suci.</ThemedText>
-      <Collapsible title="File-based routing">
+      {(dayIndex === 3 || dayIndex === 6) && (
+        <>
+        <ThemedView style={styles.titleContainer}>
+        <ThemedText type="subtitle">Hari Dada dan Lengan</ThemedText>
+        {getSpecificCard('chest-arms')}
+        <ThemedText type="subtitle">Latihan Lainnya</ThemedText>
+        {workData.filter(card => card.id !== 'chest-arms').map(card => (
+            <Card
+              key={card.id}
+              title={card.title}
+              description={card.description}
+              imageUrl={card.imageUrl}
+              item={card}
+            />
+        ))}
+        </ThemedView>
+        </>
+      )}  
+      {(dayIndex === 4 || dayIndex === 0) && (
+        <>
+        <ThemedView style={styles.titleContainer}>
+        <ThemedText type="subtitle">Hari Perut dan Bahu</ThemedText>
+        {getSpecificCard('abs-shoulders')}
+        <ThemedText type="subtitle">Latihan Lainnya</ThemedText>
+        {workData.filter(card => card.id !== 'abs-shoulders').map(card => (
+            <Card
+              key={card.id}
+              title={card.title}
+              description={card.description}
+              imageUrl={card.imageUrl}
+              item={card}
+            />
+        ))}
+        </ThemedView>
+        </>
+      )}
+      {(dayIndex === 5 || dayIndex === 1) && (
+        <>
+        <ThemedView style={styles.titleContainer}>
+        <ThemedText type="subtitle">Hari Kaki dan Punggung</ThemedText>
+        </ThemedView>
+        <ThemedText>{getSpecificCard('legs-back')}</ThemedText>
+        <ThemedText type="subtitle">Latihan Lainnya</ThemedText>
         <ThemedText>
-          This app has two screens:{' '}
-          <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> and{' '}
-          <ThemedText type="defaultSemiBold">app/(tabs)/explore.tsx</ThemedText>
+        {workData.filter(card => card.id !== 'legs-back').map(card => (
+            <Card
+              key={card.id}
+              title={card.title}
+              description={card.description}
+              imageUrl={card.imageUrl}
+              item={card}
+            />
+        ))}
         </ThemedText>
-        <ThemedText>
-          The layout file in <ThemedText type="defaultSemiBold">app/(tabs)/_layout.tsx</ThemedText>{' '}
-          sets up the tab navigator.
-        </ThemedText>
-        <ExternalLink href="https://docs.expo.dev/router/introduction">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Android, iOS, and web support">
-        <ThemedText>
-          You can open this project on Android, iOS, and the web. To open the web version, press{' '}
-          <ThemedText type="defaultSemiBold">w</ThemedText> in the terminal running this project.
-        </ThemedText>
-      </Collapsible>
-      <Collapsible title="Images">
-        <ThemedText>
-          For static images, you can use the <ThemedText type="defaultSemiBold">@2x</ThemedText> and{' '}
-          <ThemedText type="defaultSemiBold">@3x</ThemedText> suffixes to provide files for
-          different screen densities
-        </ThemedText>
-        <Image source={require('@/assets/images/react-logo.png')} style={{ alignSelf: 'center' }} />
-        <ExternalLink href="https://reactnative.dev/docs/images">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Custom fonts">
-        <ThemedText>
-          Open <ThemedText type="defaultSemiBold">app/_layout.tsx</ThemedText> to see how to load{' '}
-          <ThemedText style={{ fontFamily: 'SpaceMono' }}>
-            custom fonts such as this one.
-          </ThemedText>
-        </ThemedText>
-        <ExternalLink href="https://docs.expo.dev/versions/latest/sdk/font">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Light and dark mode components">
-        <ThemedText>
-          This template has light and dark mode support. The{' '}
-          <ThemedText type="defaultSemiBold">useColorScheme()</ThemedText> hook lets you inspect
-          what the user's current color scheme is, and so you can adjust UI colors accordingly.
-        </ThemedText>
-        <ExternalLink href="https://docs.expo.dev/develop/user-interface/color-themes/">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Animations">
-        <ThemedText>
-          This template includes an example of an animated component. The{' '}
-          <ThemedText type="defaultSemiBold">components/HelloWave.tsx</ThemedText> component uses
-          the powerful <ThemedText type="defaultSemiBold">react-native-reanimated</ThemedText>{' '}
-          library to create a waving hand animation.
-        </ThemedText>
-        {Platform.select({
-          ios: (
-            <ThemedText>
-              The <ThemedText type="defaultSemiBold">components/ParallaxScrollView.tsx</ThemedText>{' '}
-              component provides a parallax effect for the header image.
-            </ThemedText>
-          ),
-        })}
-      </Collapsible>
+        </>
+      )}    
+      {(dayIndex === 2) && (
+        <>
+        <ThemedView style={styles.titleContainer}>
+        <ThemedText type="subtitle">Hari Istirahat</ThemedText>
+        <ThemedText>Tidak ada latihan hari ini. Selamat beristirahat.</ThemedText>
+        <ThemedText type="subtitle">Menggantikan Hari-Hari Lalu?</ThemedText>
+        {workData.map(card => (
+            <Card
+              key={card.id}
+              title={card.title}
+              description={card.description}
+              imageUrl={card.imageUrl}
+              item={card}
+            />
+        ))}
+        </ThemedView>
+        </>
+      )}
     </ParallaxScrollView>
   );
+}
+const getSpecificCard = (id: string) => {
+  const card = workData.find((card) => card.id === id);
+  if (!card) {
+    throw new Error(`Kartu tidak ditemukan.`);
+  }
+  return (
+    <Card
+      key={card.id}
+      title={card.title}
+      description={card.description}
+      imageUrl={card.imageUrl}
+      item={card}
+    />
+  )
 }
 
 const styles = StyleSheet.create({
@@ -107,4 +151,19 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 8,
   },
+  button: {
+    borderRadius: 8,
+    marginBottom: 8,
+    padding: 16,
+    width: '100%',
+    backgroundColor: '#262626',
+    elevation: 1,
+  },
+  buttonTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: 'white',
+    marginBottom: 4,
+    textAlign: 'center',
+  }
 });
