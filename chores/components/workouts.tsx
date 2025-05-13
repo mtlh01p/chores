@@ -33,6 +33,7 @@ const style_work = StyleSheet.create({
   },
   item: {
     marginBottom: 10,
+    width: '95%',
   },
   checkbox: {
     width: 20,

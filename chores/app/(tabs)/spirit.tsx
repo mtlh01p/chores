@@ -263,7 +263,8 @@ const styles = StyleSheet.create({
     padding: 15,
     marginBottom: 20,
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
     item: {
     alignItems: 'center',
@@ -277,8 +278,6 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
-    marginLeft: '4%',
-    marginRight: '4%',
   },
   checkedCheckbox: {
     backgroundColor: '#277db3',
@@ -301,10 +300,12 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: 'black',
     flexShrink: 1,
+    textAlign: 'center',
   },
   label: {
     fontSize: 16,
     color: 'white',
     flexShrink: 1,
+    textAlign: 'center',
   },
 });

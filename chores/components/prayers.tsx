@@ -997,14 +997,14 @@ export function PrayText({ itemId }: { itemId: string }) {
         </View>
         <View style={style_pray.box}>
         <Collapsible title="Bahasa Indonesia">
-          <Text style={style_pray.italy}>Ya Yesus, Engkau telah wafat. Namun, Sumber Kerahiman telah memancar bagi jiwa-jiwa dan terbukalah lautan kerahiman bagi segenap dunia. Oh, Sumber Kerahiman Sejati yang Abadi, naungilah seluruh bangsa dan curahkanlah diri-Mu kepada kami.</Text>
-          <Text style={style_pray.italy}>Darah dan air yang memancar dari hati Yesus sebagai Sumber Kerahiman bagi kami, Engkaulah andalanku.</Text>
-          <Text style={style_pray.italy}>Darah dan air yang memancar dari hati Yesus sebagai Sumber Kerahiman bagi kami, Engkaulah andalanku.</Text>
-          <Text style={style_pray.italy}>Darah dan air yang memancar dari hati Yesus sebagai Sumber Kerahiman bagi kami, Engkaulah andalanku.</Text>
-          <Text style={style_pray.italy}>Allah yang kudus, kudus dan berkuasa, kudus dan kekal, kasihanilah kami dan seluruh dunia.</Text>
-          <Text style={style_pray.italy}>Allah yang kudus, kudus dan berkuasa, kudus dan kekal, kasihanilah kami dan seluruh dunia.</Text>
-          <Text style={style_pray.italy}>Allah yang kudus, kudus dan berkuasa, kudus dan kekal, kasihanilah kami dan seluruh dunia.</Text>
-          <Text style={style_pray.italy}>Yesus, Raja Kerahiman Ilahi, Engkaulah andalanku.</Text>
+          <Text style={style_pray.container}>Ya Yesus, Engkau telah wafat. Namun, Sumber Kerahiman telah memancar bagi jiwa-jiwa dan terbukalah lautan kerahiman bagi segenap dunia. Oh, Sumber Kerahiman Sejati yang Abadi, naungilah seluruh bangsa dan curahkanlah diri-Mu kepada kami.</Text>
+          <Text style={style_pray.container}>Darah dan air yang memancar dari hati Yesus sebagai Sumber Kerahiman bagi kami, Engkaulah andalanku.</Text>
+          <Text style={style_pray.container}>Darah dan air yang memancar dari hati Yesus sebagai Sumber Kerahiman bagi kami, Engkaulah andalanku.</Text>
+          <Text style={style_pray.container}>Darah dan air yang memancar dari hati Yesus sebagai Sumber Kerahiman bagi kami, Engkaulah andalanku.</Text>
+          <Text style={style_pray.container}>Allah yang kudus, kudus dan berkuasa, kudus dan kekal, kasihanilah kami dan seluruh dunia.</Text>
+          <Text style={style_pray.container}>Allah yang kudus, kudus dan berkuasa, kudus dan kekal, kasihanilah kami dan seluruh dunia.</Text>
+          <Text style={style_pray.container}>Allah yang kudus, kudus dan berkuasa, kudus dan kekal, kasihanilah kami dan seluruh dunia.</Text>
+          <Text style={style_pray.container}>Yesus, Raja Kerahiman Ilahi, Engkaulah andalanku.</Text>
           </Collapsible>
           </View>
         </>

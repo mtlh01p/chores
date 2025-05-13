@@ -3,23 +3,23 @@ import { View, ScrollView, Text, StyleSheet, TouchableOpacity, Platform } from '
 import { useLocalSearchParams, Stack, router } from 'expo-router';
 import { useState, useEffect } from 'react';
 import AntDesign from '@expo/vector-icons/AntDesign';
-import { prayData, PrayText } from '@/components/prayers';
+import { workData } from '@/components/workouts';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 interface DetailsParams {
   itemId?: string;
 }
 
-type PrayItem = (typeof prayData)[number];
-type DetailItem = PrayItem;
+type WorkItem = (typeof workData)[number];
+type DetailItem = WorkItem;
 
-function PrayHistoryScreen() {
+function WorkHistoryScreen() {
   const statusBarHeight = Platform.OS === 'ios' ? 20 : Platform.OS === 'android' ? 50 : 0;
 const [history, setHistory] = React.useState<{ timestamp: string; states: Record<number, boolean> }[]>([]);
 
 useEffect(() => {
   const fetchHistory = async () => {
     try {
-      const stored = await AsyncStorage.getItem('checklist_history');
+      const stored = await AsyncStorage.getItem('checklist_history2');
       if (stored) {
         setHistory(JSON.parse(stored));
       }
@@ -30,13 +30,13 @@ useEffect(() => {
   fetchHistory();
 }, []);
 const checklistLabels = [
-  { id: 0, label: 'M' },
-  { id: 1, label: 'S' },
-  { id: 2, label: 'S' },
-  { id: 3, label: 'R' },
-  { id: 4, label: 'K' },
-  { id: 5, label: 'J' },
-  { id: 6, label: 'S' },
+  { id: 2, label: 'KP1' },
+  { id: 3, label: 'DL1' },
+  { id: 4, label: 'PB1' },
+  { id: 5, label: 'KP2' },
+  { id: 6, label: 'DL2' },
+  { id: 0, label: 'PB2' },
+  { id: 1, label: 'I' },
 ];
 
   return (
@@ -45,9 +45,9 @@ const checklistLabels = [
       <AntDesign name="arrowleft" size={24} color="white" style={[styles.backIcon, { top: statusBarHeight + 10, left:20, zIndex:100, }]} onPress={() => router.back()} />
       <ScrollView style={styles.scroll}>
         <View style={[styles.container, { paddingTop: statusBarHeight + 10 }]}>
-        <Text style={styles.title}>Riwayat Doa</Text>
+        <Text style={styles.title}>Riwayat Olahraga</Text>
         {history.length === 0 ? (
-          <Text style={styles.detailText}>Belum ada riwayat. Riwayat akan muncul pada hari Minggu pekan ini.</Text>
+          <Text style={styles.detailText}>Belum ada riwayat. Riwayat akan muncul pada hari Selasa mendatang.</Text>
           ) : (
           history.map((entry, index) => (
             <View key={index} style={{ marginBottom: 15 }}>
@@ -184,4 +184,4 @@ backIcon: {
   },
 });
 
-export default PrayHistoryScreen;
+export default WorkHistoryScreen;
