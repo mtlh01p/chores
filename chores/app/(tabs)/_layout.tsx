@@ -48,13 +48,6 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="bahasa"
-        options={{
-          title: 'Bahasa',
-          tabBarIcon: ({ color }) => <FontAwesome5 name="language" size={24} color={color} />,
-        }}
-      />
-      <Tabs.Screen
         name="settings"
         options={{
           title: 'Pengaturan',

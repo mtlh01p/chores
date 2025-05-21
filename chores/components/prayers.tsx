@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { Text, StyleSheet, View } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, ScrollView, Text, StyleSheet, TouchableOpacity, AppState } from 'react-native';
 import { Collapsible } from '@/components/Collapsible';
-
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+// Use a specific key for prayer checklist data
+const CHECKLIST_STORAGE_KEY_PRAYERS = '@prayers:Checklist';
 const STORAGE_KEY = '@settings:selectedMasa';
 
 const style_pray = StyleSheet.create({
@@ -20,6 +21,37 @@ const style_pray = StyleSheet.create({
     textAlign: 'justify',
     fontStyle: 'italic',
   },
+  item: {
+    marginBottom: 10,
+    width: '100%',
+  },
+  checkbox: {
+    width: 20,
+    height: 20,
+    borderWidth: 1,
+    borderColor: 'gray',
+    borderRadius: 10,
+    marginRight: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  checkedCheckbox: {
+    backgroundColor: '#277db3',
+    borderColor: '#277db3',
+  },
+  checkMark: {
+    color: 'white',
+    fontSize: 12,
+  },
+  label: {
+    fontSize: 16,
+    color: 'white',
+    flexShrink: 1,
+  },
+  checkedLabel: {
+    textDecorationLine: 'line-through',
+    color: 'gray',
+  },
   subtitle: {
     fontSize: 18,
     color: 'white',
@@ -33,27 +65,96 @@ const style_pray = StyleSheet.create({
     padding: 15,
     marginBottom: 20,
     width: '95%',
-    }
+  }
 });
 
-export function PrayText({ itemId }: { itemId: string }) {
+interface PrayerItem {
+  id: number;
+  label: string;
+  isChecked: boolean;
+}
+
+interface PrayTextProps {
+  itemId: string;
+  onResetTrigger: boolean; // New prop to signal reset
+  onResetComplete: () => void; // New prop to acknowledge reset completion
+}
+
+export function PrayText({ itemId, onResetTrigger, onResetComplete }: PrayTextProps) {
   const [currentDate, setCurrentDate] = useState('');
   const [selectedMasa, setSelectedMasa] = useState('');
+  const [itemsPrayers, setItemsPrayers] = useState<PrayerItem[]>([
+    { id: 1, label: '06.00', isChecked: false },
+    { id: 2, label: '12.00', isChecked: false },
+    { id: 3, label: '15.00', isChecked: false },
+    { id: 4, label: '18.00', isChecked: false },
+    { id: 5, label: '22.00', isChecked: false },
+  ]);
 
-    useEffect(() => {
+  const defaultResetPrayers: PrayerItem[] = [
+    { id: 1, label: '06.00', isChecked: false },
+    { id: 2, label: '12.00', isChecked: false },
+    { id: 3, label: '15.00', isChecked: false },
+    { id: 4, label: '18.00', isChecked: false },
+    { id: 5, label: '22.00', isChecked: false },
+  ];
+
+  const saveChecklistDataPrayers = async (data: PrayerItem[]) => {
+    try {
+      await AsyncStorage.setItem(CHECKLIST_STORAGE_KEY_PRAYERS, JSON.stringify(data));
+    } catch (e) {
+      console.error('Failed to save checklist data for Prayers', e);
+    }
+  };
+
+  const handleCheckboxTogglePrayers = (id: number) => {
+    const updated = itemsPrayers.map(item =>
+      item.id === id ? { ...item, isChecked: !item.isChecked } : item
+    );
+    setItemsPrayers(updated);
+    saveChecklistDataPrayers(updated);
+  };
+
+  const resetChecklists = useCallback(async () => {
+    try {
+      setItemsPrayers(defaultResetPrayers);
+      await AsyncStorage.setItem(CHECKLIST_STORAGE_KEY_PRAYERS, JSON.stringify(defaultResetPrayers));
+      console.log('PrayText: Checklist reset.');
+      onResetComplete(); // Notify parent that reset is done
+    } catch (error) {
+      console.error('PrayText: Failed to reset checklists', error);
+    }
+  }, [onResetComplete]); // Depend on onResetComplete
+
+  // Effect to load checklist data on component mount
+  useEffect(() => {
+    const loadChecklistData = async () => {
+      try {
+        const storedPrayers = await AsyncStorage.getItem(CHECKLIST_STORAGE_KEY_PRAYERS);
+        if (storedPrayers) setItemsPrayers(JSON.parse(storedPrayers));
+      } catch (e) {
+        console.error('PrayText: Failed to load initial checklist data', e);
+      }
+    };
+    loadChecklistData();
+  }, []);
+
+  // Effect to listen for reset trigger from parent
+  useEffect(() => {
+    if (onResetTrigger) {
+      resetChecklists();
+    }
+  }, [onResetTrigger, resetChecklists]);
+
+  useEffect(() => {
     const loadMasa = async () => {
       try {
         const storedMasa = await AsyncStorage.getItem(STORAGE_KEY);
-        if (storedMasa) {
-          setSelectedMasa(storedMasa);
-        } else {
-          setSelectedMasa('Biasa');
-        }
+        setSelectedMasa(storedMasa || 'Biasa');
       } catch (error) {
-        console.error('Failed to load masa in PrayersScreen:', error);
+        console.error('PrayText: Failed to load masa:', error);
       }
     };
-
     loadMasa();
   }, []);
 
@@ -68,6 +169,21 @@ export function PrayText({ itemId }: { itemId: string }) {
     const formattedDate = now.toLocaleString('id-ID', options);
     setCurrentDate(formattedDate);
   }, []);
+
+const mainPrayersGetText = (itemId: string): React.ReactNode => {
+  const foundPrayer = mainPrayers.find((prayer) => prayer.id === itemId);
+  if (foundPrayer && typeof foundPrayer.text === 'string') {
+    return (
+      <Collapsible title={foundPrayer.title}>
+        {foundPrayer.text.split('\n').map((line: string, index: number) => (
+          <Text key={index} style={style_pray.container}>{line}</Text>
+        ))}
+      </Collapsible>
+    );
+  } else {
+    return <Text>No element found.</Text>;
+  }
+}
 
   const getDayIndex = () => {
     const now = new Date();
@@ -553,6 +669,24 @@ export function PrayText({ itemId }: { itemId: string }) {
           </View>
             </>
           )}
+          {itemsPrayers.filter(item => item.id === 5).map((item) => (
+                <TouchableOpacity
+                  key={item.id}
+                  style={style_pray.item}
+                  onPress={() => handleCheckboxTogglePrayers(item.id)}
+                >
+                  <View style={[style_pray.box, {flexDirection: 'row', alignItems:'center'}]}>
+                    <View style={[style_pray.checkbox, item.isChecked && style_pray.checkedCheckbox]}>
+                      {item.isChecked && <Text style={style_pray.checkMark}>✓</Text>}
+                    </View>
+                    <View style={{ flexDirection: 'column', width: '85%' }}>
+                      <Text style={[style_pray.label, item.isChecked && style_pray.checkedLabel]}>
+                        {item.label}
+                      </Text>
+                    </View>
+                  </View>
+                </TouchableOpacity>
+        ))}
         </>
       );
     }else if (selectedMasa == 'Prapaskah') {
@@ -673,6 +807,24 @@ export function PrayText({ itemId }: { itemId: string }) {
           {mainPrayersGetText('terpujilah')}
           {mainPrayersGetText('doafatima')}
           </View>
+          {itemsPrayers.filter(item => item.id === 5).map((item) => (
+                <TouchableOpacity
+                  key={item.id}
+                  style={style_pray.item}
+                  onPress={() => handleCheckboxTogglePrayers(item.id)}
+                >
+                  <View style={[style_pray.box, {flexDirection: 'row', alignItems:'center'}]}>
+                    <View style={[style_pray.checkbox, item.isChecked && style_pray.checkedCheckbox]}>
+                      {item.isChecked && <Text style={style_pray.checkMark}>✓</Text>}
+                    </View>
+                    <View style={{ flexDirection: 'column', width: '85%' }}>
+                      <Text style={[style_pray.label, item.isChecked && style_pray.checkedLabel]}>
+                        {item.label}
+                      </Text>
+                    </View>
+                  </View>
+                </TouchableOpacity>
+        ))}
             </>
       );
     }else if (selectedMasa == 'Paskah') {
@@ -793,6 +945,24 @@ export function PrayText({ itemId }: { itemId: string }) {
           {mainPrayersGetText('terpujilah')}
           {mainPrayersGetText('doafatima')}
           </View>
+          {itemsPrayers.filter(item => item.id === 5).map((item) => (
+                <TouchableOpacity
+                  key={item.id}
+                  style={style_pray.item}
+                  onPress={() => handleCheckboxTogglePrayers(item.id)}
+                >
+                  <View style={[style_pray.box, {flexDirection: 'row', alignItems:'center'}]}>
+                    <View style={[style_pray.checkbox, item.isChecked && style_pray.checkedCheckbox]}>
+                      {item.isChecked && <Text style={style_pray.checkMark}>✓</Text>}
+                    </View>
+                    <View style={{ flexDirection: 'column', width: '85%' }}>
+                      <Text style={[style_pray.label, item.isChecked && style_pray.checkedLabel]}>
+                        {item.label}
+                      </Text>
+                    </View>
+                  </View>
+                </TouchableOpacity>
+        ))}
             </>
       );
     }else{
@@ -913,6 +1083,24 @@ export function PrayText({ itemId }: { itemId: string }) {
           {mainPrayersGetText('terpujilah')}
           {mainPrayersGetText('doafatima')}
           </View>
+          {itemsPrayers.filter(item => item.id === 5).map((item) => (
+                <TouchableOpacity
+                  key={item.id}
+                  style={style_pray.item}
+                  onPress={() => handleCheckboxTogglePrayers(item.id)}
+                >
+                  <View style={[style_pray.box, {flexDirection: 'row', alignItems:'center'}]}>
+                    <View style={[style_pray.checkbox, item.isChecked && style_pray.checkedCheckbox]}>
+                      {item.isChecked && <Text style={style_pray.checkMark}>✓</Text>}
+                    </View>
+                    <View style={{ flexDirection: 'column', width: '85%' }}>
+                      <Text style={[style_pray.label, item.isChecked && style_pray.checkedLabel]}>
+                        {item.label}
+                      </Text>
+                    </View>
+                  </View>
+                </TouchableOpacity>
+        ))}
             </>
       );
     }
@@ -951,6 +1139,24 @@ export function PrayText({ itemId }: { itemId: string }) {
           <Text style={style_pray.container}>Ya Allah, karena kabar malaikat, kami mengetahui bahwa Yesus Kristus, Putra-Mu menjadi manusia. Curahkanlah rahmat-Mu ke dalam hati kami, supaya karena sengsara dan salib-Nya, kami dibawa kepada kebangkitan yang mulia. Sebab Dialah Tuhan, pengantara kami.</Text>
           </Collapsible>
           </View>
+          {itemsPrayers.filter(item => item.id === 1 || item.id === 2 || item.id === 4).map((item) => (
+                <TouchableOpacity
+                  key={item.id}
+                  style={style_pray.item}
+                  onPress={() => handleCheckboxTogglePrayers(item.id)}
+                >
+                  <View style={[style_pray.box, {flexDirection: 'row', alignItems:'center'}]}>
+                    <View style={[style_pray.checkbox, item.isChecked && style_pray.checkedCheckbox]}>
+                      {item.isChecked && <Text style={style_pray.checkMark}>✓</Text>}
+                    </View>
+                    <View style={{ flexDirection: 'column', width: '85%' }}>
+                      <Text style={[style_pray.label, item.isChecked && style_pray.checkedLabel]}>
+                        {item.label}
+                      </Text>
+                    </View>
+                  </View>
+                </TouchableOpacity>
+        ))}
         </>
       );
     case 'ratusurga':
@@ -978,6 +1184,24 @@ export function PrayText({ itemId }: { itemId: string }) {
           <Text style={style_pray.container}>Ya Allah, Engkau telah menggembirakan dunia dengan kebangkitan Putra-Mu, Tuhan kami Yesus Kristus. Kami mohon, perkenankanlah kami bersukacita dalam kehidupan kekal bersama bunda-Nya, Perawan Maria. Demi Kristus, pengantara kami. Amin.</Text>
           </Collapsible>
           </View>
+          {itemsPrayers.filter(item => item.id === 1 || item.id === 2 || item.id === 4).map((item) => (
+                <TouchableOpacity
+                  key={item.id}
+                  style={style_pray.item}
+                  onPress={() => handleCheckboxTogglePrayers(item.id)}
+                >
+                  <View style={[style_pray.box, {flexDirection: 'row', alignItems:'center'}]}>
+                    <View style={[style_pray.checkbox, item.isChecked && style_pray.checkedCheckbox]}>
+                      {item.isChecked && <Text style={style_pray.checkMark}>✓</Text>}
+                    </View>
+                    <View style={{ flexDirection: 'column', width: '85%' }}>
+                      <Text style={[style_pray.label, item.isChecked && style_pray.checkedLabel]}>
+                        {item.label}
+                      </Text>
+                    </View>
+                  </View>
+                </TouchableOpacity>
+        ))}
         </>
       );
     case 'kerahimanilahi':
@@ -1007,6 +1231,24 @@ export function PrayText({ itemId }: { itemId: string }) {
           <Text style={style_pray.container}>Yesus, Raja Kerahiman Ilahi, Engkaulah andalanku.</Text>
           </Collapsible>
           </View>
+          {itemsPrayers.filter(item => item.id === 3).map((item) => (
+                <TouchableOpacity
+                  key={item.id}
+                  style={style_pray.item}
+                  onPress={() => handleCheckboxTogglePrayers(item.id)}
+                >
+                  <View style={[style_pray.box, {flexDirection: 'row', alignItems:'center'}]}>
+                    <View style={[style_pray.checkbox, item.isChecked && style_pray.checkedCheckbox]}>
+                      {item.isChecked && <Text style={style_pray.checkMark}>✓</Text>}
+                    </View>
+                    <View style={{ flexDirection: 'column', width: '85%' }}>
+                      <Text style={[style_pray.label, item.isChecked && style_pray.checkedLabel]}>
+                        {item.label}
+                      </Text>
+                    </View>
+                  </View>
+                </TouchableOpacity>
+        ))}
         </>
       )
     default:
@@ -1021,11 +1263,13 @@ export function PrayText({ itemId }: { itemId: string }) {
 
 const mainPrayers = [
   {
+
     title: 'Aku Percaya',
     text: 'Aku percaya akan Allah, Bapa yang Mahakuasa, Pencipta langit dan bumi. Dan akan Yesus Kristus, Putra-Nya yang tunggal, Tuhan kita, yang dikandung dari Roh Kudus, lahir dari Perawan Maria, yang menderita sengsara dalam pemerintahan Pontius Pilatus, disalibkan, mati dan dikuburkan; turun ke tempat penantian; pada hari ketiga bangkit dari antara orang mati; naik ke surga, duduk di sebelah kanan Allah Bapa yang Mahakuasa; dari situ Ia akan datang mengadili orang yang hidup dan yang mati. Aku percaya akan Roh Kudus; Gereja Katolik yang kudus; persekutuan para kudus; pengampunan dosa; kebangkitan tubuh; dan hidup kekal. Amin.',
     id: 'akupercaya',
   },
   {
+
     title: 'Bapa Kami',
     text: 'Bapa kami yang ada di Surga, dimuliakanlah nama-Mu. Datanglah Kerajaan-Mu, jadilah kehendak-Mu. Di atas Bumi seperti di dalam surga. Berilah kami rezeki pada hari ini, dan ampunilah kesalahan kami, seperti kami pun mengampuni yang bersalah kepada kami. Janganlah masukkan kami ke dalam pencobaan, tetapi bebaskanlah kami dari yang jahat. Amin.',
     id: 'bapakami',

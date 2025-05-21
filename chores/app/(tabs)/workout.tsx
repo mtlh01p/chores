@@ -1,167 +1,193 @@
-import { StyleSheet, Image, Platform, TouchableOpacity, Text, View } from 'react-native';
-import { useState, useEffect } from 'react';
+import { StyleSheet, Image, Platform, TouchableOpacity, Text, View, AppState } from 'react-native';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Collapsible } from '@/components/Collapsible';
 import { ExternalLink } from '@/components/ExternalLink';
 import ParallaxScrollView from '@/components/ParallaxScrollView';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { IconSymbol } from '@/components/ui/IconSymbol';
-import Card from '@/components/card'
+import Card from '@/components/card';
 import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
 import { workData } from '@/components/workouts';
 import { useRouter } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-export default function WorkoutScreen() {
-      const [currentDate, setCurrentDate] = useState('');
+const CHECKLIST_STORAGE_KEY_CA = '@workout:CA';
+const CHECKLIST_STORAGE_KEY_LB = '@workout:LB';
+const CHECKLIST_STORAGE_KEY_AS = '@workout:AS';
+const WORKOUT_HISTORY_STORAGE_KEY = '@workout:History';
+const LAST_SAVE_DATE_KEY = '@workout:lastSaveDate';
 
-  useEffect(() => {
-  const initializeFirstLaunch = async () => {
-    const firstLaunch = await AsyncStorage.getItem('first_launch_time');
-    if (!firstLaunch) {
-      await AsyncStorage.setItem('first_launch_time', new Date().toISOString());
+export default function WorkoutScreen() {
+  const [currentDate, setCurrentDate] = useState('');
+  const [countCA, setCountCA] = useState(0);
+  const [countLB, setCountLB] = useState(0);
+  const [countAS, setCountAS] = useState(0);
+  const [LBcolor, setLBcolor] = useState('transparent');
+  const [CAcolor, setCAcolor] = useState('transparent');
+  const [AScolor, setAScolor] = useState('transparent');
+  const [dayIndex, setdayIndex] = useState(0);
+  const appState = useRef(AppState.currentState);
+  const router = useRouter();
+
+  const loadChecklistDataAndCounts = useCallback(async () => {
+    try {
+      const storedCA = await AsyncStorage.getItem(CHECKLIST_STORAGE_KEY_CA);
+      const parsedCA = storedCA ? JSON.parse(storedCA) : [];
+      setCountCA(parsedCA.filter(item => item.id <= 8 && item.isChecked).length);
+
+      const storedLB = await AsyncStorage.getItem(CHECKLIST_STORAGE_KEY_LB);
+      const parsedLB = storedLB ? JSON.parse(storedLB) : [];
+      setCountLB(parsedLB.filter(item => item.id <= 8 && item.isChecked).length);
+
+      const storedAS = await AsyncStorage.getItem(CHECKLIST_STORAGE_KEY_AS);
+      const parsedAS = storedAS ? JSON.parse(storedAS) : [];
+      setCountAS(parsedAS.filter(item => item.id <= 7 && item.isChecked).length); // Adjusted for AS wajib count
+    } catch (e) {
+      console.error('Failed to load checklist data', e);
+    }
+  }, []);
+
+  const resetChecklists = async () => {
+    try {
+      await AsyncStorage.setItem(CHECKLIST_STORAGE_KEY_CA, JSON.stringify(workData.find(item => item.id === 'chest-arms')?.text.props.children[1].props.children.map(item => ({ ...item.props.children.props.item, isChecked: false })) || []));
+      await AsyncStorage.setItem(CHECKLIST_STORAGE_KEY_LB, JSON.stringify(workData.find(item => item.id === 'legs-back')?.text.props.children[1].props.children.map(item => ({ ...item.props.children.props.item, isChecked: false })) || []));
+      await AsyncStorage.setItem(CHECKLIST_STORAGE_KEY_AS, JSON.stringify(workData.find(item => item.id === 'abs-shoulders')?.text.props.children[1].props.children.map(item => ({ ...item.props.children.props.item, isChecked: false })) || []));
+      console.log('Checklists reset.');
+    } catch (error) {
+      console.error('Failed to reset checklists', error);
     }
   };
-  initializeFirstLaunch();
-}, []);
 
-  const router = useRouter();
+  const performSaveAndReset = async (saveDate: string) => {
+    try {
+      await storeWorkoutHistory(saveDate);
+      setCountCA(0);
+      setCountLB(0);
+      setCountAS(0);
+      await AsyncStorage.setItem(CHECKLIST_STORAGE_KEY_CA, JSON.stringify(workData.find(item => item.id === 'chest-arms')?.text.props.children[1].props.children.map(item => ({ ...item.props.children.props.item, isChecked: false })) || []));
+      await AsyncStorage.setItem(CHECKLIST_STORAGE_KEY_LB, JSON.stringify(workData.find(item => item.id === 'legs-back')?.text.props.children[1].props.children.map(item => ({ ...item.props.children.props.item, isChecked: false })) || []));
+      await AsyncStorage.setItem(CHECKLIST_STORAGE_KEY_AS, JSON.stringify(workData.find(item => item.id === 'abs-shoulders')?.text.props.children[1].props.children.map(item => ({ ...item.props.children.props.item, isChecked: false })) || []));
+      await AsyncStorage.setItem(LAST_SAVE_DATE_KEY, saveDate);
+      console.log('Save and reset performed.');
+    } catch (error) {
+      console.error('Failed to save and reset workout data', error);
+    }
+  };
+
+  const storeWorkoutHistory = async (saveDate: string) => {
+    try {
+      const newHistoryEntry = {
+        date: saveDate,
+        chestArmsCount: countCA,
+        legsBackCount: countLB,
+        absShouldersCount: countAS,
+      };
+
+      const storedHistory = await AsyncStorage.getItem(WORKOUT_HISTORY_STORAGE_KEY);
+      const existingHistory = storedHistory ? JSON.parse(storedHistory) : [];
+
+      const updatedHistory = [...existingHistory, newHistoryEntry];
+      await AsyncStorage.setItem(WORKOUT_HISTORY_STORAGE_KEY, JSON.stringify(updatedHistory));
+      console.log('Workout history stored for:', saveDate, newHistoryEntry);
+    } catch (error) {
+      console.error('Failed to store workout history', error);
+    }
+  };
+
+  useEffect(() => {
+    loadChecklistDataAndCounts();
+  }, [loadChecklistDataAndCounts]);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadChecklistDataAndCounts(); // Reload counts every time the screen comes into focus
+
+      const now = new Date();
+      setdayIndex(now.getDay());
+      const index = now.getDay();
+      if (index === 3 || index === 6) {
+        setCAcolor('#424242');
+        setAScolor('transparent');
+        setLBcolor('transparent');
+      } else if (index === 4 || index === 0) {
+        setCAcolor('transparent');
+        setAScolor('#424242');
+        setLBcolor('transparent');
+      } else if (index === 2 || index === 5) {
+        setCAcolor('transparent');
+        setAScolor('transparent');
+        setLBcolor('#424242');
+      } else {
+        setCAcolor('transparent');
+        setAScolor('transparent');
+        setLBcolor('transparent');
+      }
+    }, [loadChecklistDataAndCounts]) // Make sure to include the callback in the dependency array
+  );
+
+  useEffect(() => {
+    const checkMidnight = () => {
+      const now = new Date();
+      const hours = now.getHours();
+      const minutes = now.getMinutes();
+      const seconds = now.getSeconds();
+      const todayDate = now.toDateString();
+
+      AsyncStorage.getItem(LAST_SAVE_DATE_KEY).then(lastSavedDate => {
+        if (hours === 0 && minutes === 0 && seconds < 5 && lastSavedDate !== todayDate) {
+          performSaveAndReset(todayDate);
+        }
+      });
+    };
+
+    const intervalId = setInterval(checkMidnight, 1000);
+    return () => clearInterval(intervalId);
+  }, [countCA, countLB, countAS]);
+
+  useEffect(() => {
+    const handleAppStateChange = async (nextAppState: string) => {
+      if (appState.current.match(/inactive|background/) && nextAppState === 'active') {
+        console.log('App has come to the foreground!');
+        const lastSaveDate = await AsyncStorage.getItem(LAST_SAVE_DATE_KEY);
+        const todayDate = new Date().toDateString();
+        if (lastSaveDate !== todayDate) {
+          console.log('Performing missed midnight save and reset.');
+          await performSaveAndReset(todayDate);
+        }
+      }
+      appState.current = nextAppState;
+    };
+
+    const subscription = AppState.addEventListener('change', handleAppStateChange);
+    return () => {
+      subscription.remove();
+    };
+  }, []);
+
   const movetoHistory = () => {
     router.push('/history_work');
   };
-  interface ChecklistItem {
-  id: number;
-  label: string;
-  isChecked: boolean;
-}
 
-  const [items, setItems] = useState<ChecklistItem[]>([
-    { id: 2, label: 'KP1', isChecked: false },
-    { id: 3, label: 'DL1', isChecked: false },
-    { id: 4, label: 'PB1', isChecked: false },
-    { id: 5, label: 'KP2', isChecked: false },
-    { id: 6, label: 'DL2', isChecked: false },
-    { id: 0, label: 'PB2', isChecked: false },
-    { id: 1, label: 'I', isChecked: false },
-  ]);
-
-  useEffect(() => {
-    const loadCheckedStates = async () => {
-      try {
-        const storedStates = await AsyncStorage.getItem('checklist_states2');
-        if (storedStates !== null) {
-          const parsedStates = JSON.parse(storedStates);
-          setItems(prevItems =>
-            prevItems.map(item => ({
-              ...item,
-              isChecked: parsedStates[item.id] || false,
-            }))
-          );
-        }
-      } catch (error) {
-        console.error('Failed to load checklist states:', error);
-      }
-    };
-    loadCheckedStates();
-  }, []);
-
-useEffect(() => {
-  const checkAndResetWeeklyChecklist = async () => {
-    try {
-      const now = new Date();
-      const day = now.getDay();
-      const diffToTuesday = (day >= 2) ? day - 2 : 7 - (2 - day);
-      const lastTuesdayMidnight = new Date(now);
-      lastTuesdayMidnight.setDate(now.getDate() - diffToTuesday);
-      lastTuesdayMidnight.setHours(0, 0, 0, 0);
-
-
-      const firstLaunch = await AsyncStorage.getItem('first_launch_time');
-      const isOneWeekOld =
-        firstLaunch &&
-        new Date().getTime() - new Date(firstLaunch).getTime() >= 7 * 24 * 60 * 60 * 1000;
-
-      const lastReset = await AsyncStorage.getItem('last_reset_time2');
-      const lastResetDate = lastReset ? new Date(lastReset) : null;
-
-      if (!lastResetDate || lastResetDate < lastTuesdayMidnight){
-        const storedStates = await AsyncStorage.getItem('checklist_states2');
-        const parsedStates = storedStates ? JSON.parse(storedStates) : {};
-
-        if (isOneWeekOld) {
-          const history = await AsyncStorage.getItem('checklist_history2');
-          const parsedHistory = history ? JSON.parse(history) : [];
-
-          parsedHistory.unshift({
-            timestamp: lastTuesdayMidnight.toISOString(),
-            states: parsedStates,
-          });
-
-          await AsyncStorage.setItem('checklist_history2', JSON.stringify(parsedHistory));
-        }
-
-        const resetItems = items.map(item => ({
-          ...item,
-          isChecked: false,
-        }));
-        setItems(resetItems);
-
-        const resetStates: Record<number, boolean> = {};
-        resetItems.forEach(item => {
-          resetStates[item.id] = false;
-        });
-
-        await AsyncStorage.setItem('checklist_states2', JSON.stringify(resetStates));
-        await AsyncStorage.setItem('last_reset_time2', now.toISOString());
-      }
-    } catch (err) {
-      console.error('Failed weekly reset:', err);
+  const getSpecificCard = (id: string) => {
+    const card = workData.find((card) => card.id === id);
+    if (!card) {
+      console.error(`Card with id '${id}' not found.`);
+      return null;
     }
-  };
-
-  checkAndResetWeeklyChecklist();
-}, []);
-
-  const handleCheckboxToggle = (id: number) => {
-    setItems(prevItems =>
-      prevItems.map(item =>
-        item.id === id ? { ...item, isChecked: !item.isChecked } : item
-      )
+    return (
+      <ThemedText>
+        <Card
+          key={card.id}
+          title={card.title}
+          description={card.description}
+          imageUrl={card.imageUrl}
+          item={card}
+        />
+      </ThemedText>
     );
   };
-
-  useEffect(() => {
-    const saveCheckedStates = async () => {
-      try {
-        const statesToSave = {};
-        items.forEach(item => {
-          statesToSave[item.id] = item.isChecked;
-        });
-        await AsyncStorage.setItem('checklist_states2', JSON.stringify(statesToSave));
-      } catch (error) {
-        console.error('Failed to save checklist states:', error);
-      }
-    };
-    saveCheckedStates();
-  }, [items]);
-    
-      useEffect(() => {
-        const now = new Date();
-        const options: Intl.DateTimeFormatOptions = {
-          weekday: 'long',
-          year: 'numeric',
-          month: 'long',
-          day: 'numeric',
-        };
-        const formattedDate = now.toLocaleString('id-ID', options);
-        setCurrentDate(formattedDate);
-      }, []);
-    
-      const getDayIndex = () => {
-        const now = new Date();
-        return now.getDay();
-      };
-      const dayIndex = getDayIndex();
 
   return (
     <ParallaxScrollView
@@ -173,127 +199,111 @@ useEffect(() => {
           name="dumbbell"
           style={styles.headerImage}
         />
-      }>
+      }
+    >
       <ThemedView style={styles.titleContainer}>
         <ThemedText type="title">Workout</ThemedText>
       </ThemedView>
       <ThemedText>Utamakan pengendalian diri. Lakukan yang maksimal. Tubuhmu adalah bait suci.</ThemedText>
-       <View style={[styles.box]}>
-       {items.map((item) => (
-         <TouchableOpacity
-            key={item.id}
-            style={styles.item}
-              onPress={() => handleCheckboxToggle(item.id)}
-              disabled={false}
-              >
-              <View style={styles.checkboxContainer}>
-              <View style={[styles.checkbox, item.isChecked && styles.checkedCheckbox]}>
-              {item.isChecked && <Text style={styles.checkMark}>✓</Text>}
-              </View>
-              </View>
-              <View style={styles.labelContainer}><Text style={[styles.label, item.isChecked && styles.checkedLabel,]}>
-                {item.label}
-              </Text>
-              </View>
-              </TouchableOpacity>
-              ))} 
-       </View>
-       <TouchableOpacity style={[styles.button]} onPress={movetoHistory}>
+      <View style={[styles.box]}>
+        <View style={[styles.box2, { backgroundColor: LBcolor }]}>
+          <ThemedText style={{ fontSize: 25, fontWeight: 'bold' }}>{countLB}</ThemedText>
+          <ThemedText style={{ fontSize: 11, fontWeight: 'bold' }}>Kaki/Punggung</ThemedText>
+        </View>
+        <View style={[styles.box2, { backgroundColor: CAcolor }]}>
+          <ThemedText style={{ fontSize: 25, fontWeight: 'bold' }}>{countCA}</ThemedText>
+          <ThemedText style={{ fontSize: 11, fontWeight: 'bold' }}>Dada/Lengan</ThemedText>
+        </View>
+        <View style={[styles.box2, { backgroundColor: AScolor }]}>
+          <ThemedText style={{ fontSize: 25, fontWeight: 'bold' }}>{countAS}</ThemedText>
+          <ThemedText style={{ fontSize: 11, fontWeight: 'bold' }}>Perut/Bahu</ThemedText>
+        </View>
+      </View>
+      <TouchableOpacity style={[styles.button]} onPress={movetoHistory}>
         <Text style={styles.buttonTitle}>Lihat Riwayat</Text>
-       </TouchableOpacity>
+      </TouchableOpacity>
       {(dayIndex === 3 || dayIndex === 6) && (
         <>
-        <ThemedView style={styles.titleContainer}>
-        <ThemedText type="subtitle">Hari Dada dan Lengan</ThemedText>
-        </ThemedView>
-        {getSpecificCard('chest-arms')}
-        <ThemedText type="subtitle">Latihan Lainnya</ThemedText>
-        {workData.filter(card => card.id !== 'chest-arms').map(card => (
-            <Card
-              key={card.id}
-              title={card.title}
-              description={card.description}
-              imageUrl={card.imageUrl}
-              item={card}
-            />
-        ))}
+          <ThemedView style={styles.titleContainer}>
+            <ThemedText type="subtitle">Hari Dada dan Lengan</ThemedText>
+          </ThemedView>
+          {getSpecificCard('chest-arms')}
+          <ThemedText type="subtitle">Latihan Lainnya</ThemedText>
+          <ThemedText>
+            {workData.filter(card => card.id !== 'chest-arms').map(card => (
+              <Card
+                key={card.id}
+                title={card.title}
+                description={card.description}
+                imageUrl={card.imageUrl}
+                item={card}
+              />
+            ))}
+          </ThemedText>
         </>
-      )}  
+      )}
       {(dayIndex === 4 || dayIndex === 0) && (
         <>
-        <ThemedView style={styles.titleContainer}>
-        <ThemedText type="subtitle">Hari Perut dan Bahu</ThemedText>
-        </ThemedView>
-        {getSpecificCard('abs-shoulders')}
-        <ThemedText type="subtitle">Latihan Lainnya</ThemedText>
-        {workData.filter(card => card.id !== 'abs-shoulders').map(card => (
-            <Card
-              key={card.id}
-              title={card.title}
-              description={card.description}
-              imageUrl={card.imageUrl}
-              item={card}
-            />
-        ))}
+          <ThemedView style={styles.titleContainer}>
+            <ThemedText type="subtitle">Hari Perut dan Bahu</ThemedText>
+          </ThemedView>
+          {getSpecificCard('abs-shoulders')}
+          <ThemedText type="subtitle">Latihan Lainnya</ThemedText>
+          <ThemedText>
+            {workData.filter(card => card.id !== 'abs-shoulders').map(card => (
+              <Card
+                key={card.id}
+                title={card.title}
+                description={card.description}
+                imageUrl={card.imageUrl}
+                item={card}
+              />
+            ))}
+          </ThemedText>
         </>
       )}
       {(dayIndex === 2 || dayIndex === 5) && (
         <>
-        <ThemedView style={styles.titleContainer}>
-        <ThemedText type="subtitle">Hari Kaki dan Punggung</ThemedText>
-        </ThemedView>
-        <ThemedText>{getSpecificCard('legs-back')}</ThemedText>
-        <ThemedText type="subtitle">Latihan Lainnya</ThemedText>
-        <ThemedText>
-        {workData.filter(card => card.id !== 'legs-back').map(card => (
-            <Card
-              key={card.id}
-              title={card.title}
-              description={card.description}
-              imageUrl={card.imageUrl}
-              item={card}
-            />
-        ))}
-        </ThemedText>
+          <ThemedView style={styles.titleContainer}>
+            <ThemedText type="subtitle">Hari Kaki dan Punggung</ThemedText>
+          </ThemedView>
+          {getSpecificCard('legs-back')}
+          <ThemedText type="subtitle">Latihan Lainnya</ThemedText>
+          <ThemedText>
+            {workData.filter(card => card.id !== 'legs-back').map(card => (
+              <Card
+                key={card.id}
+                title={card.title}
+                description={card.description}
+                imageUrl={card.imageUrl}
+                item={card}
+              />
+            ))}
+          </ThemedText>
         </>
-      )}    
+      )}
       {(dayIndex === 1) && (
         <>
-        <ThemedView style={styles.titleContainer}>
-        <ThemedText type="subtitle">Hari Istirahat</ThemedText>
-        </ThemedView>
-        <ThemedText>Tidak ada latihan hari ini. Selamat beristirahat.</ThemedText>
-        <ThemedText type="subtitle">Menggantikan Hari-Hari Lalu?</ThemedText>
-        <ThemedText>
-        {workData.map(card => (
-            <Card
-              key={card.id}
-              title={card.title}
-              description={card.description}
-              imageUrl={card.imageUrl}
-              item={card}
-            />
-        ))}
-        </ThemedText>
+          <ThemedView style={styles.titleContainer}>
+            <ThemedText type="subtitle">Hari Istirahat</ThemedText>
+          </ThemedView>
+          <ThemedText>Tidak ada latihan hari ini. Selamat beristirahat.</ThemedText>
+          <ThemedText type="subtitle">Menggantikan Hari-Hari Lalu?</ThemedText>
+          <ThemedText>
+            {workData.map(card => (
+              <Card
+                key={card.id}
+                title={card.title}
+                description={card.description}
+                imageUrl={card.imageUrl}
+                item={card}
+              />
+            ))}
+          </ThemedText>
         </>
       )}
     </ParallaxScrollView>
   );
-}
-const getSpecificCard = (id: string) => {
-  const card = workData.find((card) => card.id === id);
-  if (!card) {
-    throw new Error(`Kartu tidak ditemukan.`);
-  }
-  return (
-    <Card
-      key={card.id}
-      title={card.title}
-      description={card.description}
-      imageUrl={card.imageUrl}
-      item={card}
-    />
-  )
 }
 
 const styles = StyleSheet.create({
@@ -324,7 +334,7 @@ const styles = StyleSheet.create({
     color: 'white',
     marginBottom: 4,
     textAlign: 'center',
-  },    
+  },
   box: {
     borderRadius: 8,
     backgroundColor: '#1a1a1a',
@@ -334,7 +344,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-    item: {
+  box2: {
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    flexDirection: 'column',
+    width: '33%',
+    marginBottom: 0,
+    paddingTop: 10,
+    padding: 5,
+  },
+  item: {
     alignItems: 'center',
     color: 'green',
   },
@@ -359,10 +379,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'flex-start',
   },
-  labelContainer: { 
+  labelContainer: {
     width: '100%',
-    alignItems: 'center', 
-    marginTop: 5, 
+    alignItems: 'center',
+    marginTop: 5,
   },
   label_d: {
     fontSize: 16,

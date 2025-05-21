@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Text, StyleSheet, View, TouchableOpacity } from 'react-native';
-import { Collapsible } from '@/components/Collapsible';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const CHECKLIST_STORAGE_KEY_CA = '@workout:CA';
+const CHECKLIST_STORAGE_KEY_LB = '@workout:LB';
+const CHECKLIST_STORAGE_KEY_AS = '@workout:AS';
 
 const style_work = StyleSheet.create({
   container: {
@@ -75,7 +79,7 @@ const style_work = StyleSheet.create({
 });
 
 export function WorkoutText({ itemId }: { itemId: string }) {
-    const [itemsCA, setItemsCA] = useState([
+  const [itemsCA, setItemsCA] = useState([
     { id: 1, label: 'Bench Press', desc: '1. Konservatif dengan beban. \n2. Turunkan secara perlahan, berhenti ketika failure.\n3.Kamu bisa!', isChecked: false },
     { id: 2, label: 'Barbell Chest Press', desc: '1. Usahakan sampai bawah.\n2. Gunakan permukaan datar', isChecked: false },
     { id: 3, label: 'Vertical Chest Press', desc: '1. Kaki di lantai, bukan di pedal.\n2. Tinggi kursi level 3', isChecked: false },
@@ -110,151 +114,217 @@ export function WorkoutText({ itemId }: { itemId: string }) {
     { id: 8, label: 'Biceps Curl', desc: '1. Kombinasi bar dan dumbell\n2. Miringkan badan per sisi', isChecked: false },
     { id: 9, label: 'Chest Fly', desc: '1. Sekitar 1/2 atau 1/4 dari centre\n2. Boleh ditarik satu lengan dahulu baru ke tengah', isChecked: false },
   ]);
-  const handleCheckboxToggleLB = (id : number) => {
-    setItemsLB(
-      itemsLB.map((item) =>
-        item.id === id ? { ...item, isChecked: !item.isChecked } : item
-      )
+
+  const saveChecklistDataCA = async (data: typeof itemsCA) => {
+    try {
+      await AsyncStorage.setItem(CHECKLIST_STORAGE_KEY_CA, JSON.stringify(data));
+    } catch (e) {
+      console.error('Failed to save checklist data for Chest-Arms', e);
+    }
+  };
+
+  const saveChecklistDataLB = async (data: typeof itemsLB) => {
+    try {
+      await AsyncStorage.setItem(CHECKLIST_STORAGE_KEY_LB, JSON.stringify(data));
+    } catch (e) {
+      console.error('Failed to save checklist data for Legs-Back', e);
+    }
+  };
+
+  const saveChecklistDataAS = async (data: typeof itemsAS) => {
+    try {
+      await AsyncStorage.setItem(CHECKLIST_STORAGE_KEY_AS, JSON.stringify(data));
+    } catch (e) {
+      console.error('Failed to save checklist data for Abs-Shoulders', e);
+    }
+  };
+
+  const handleCheckboxToggleLB = (id: number) => {
+    const updated = itemsLB.map(item =>
+      item.id === id ? { ...item, isChecked: !item.isChecked } : item
     );
-    };
-  const handleCheckboxToggleCA = (id : number) => {
-    setItemsCA(
-      itemsCA.map((item) =>
-        item.id === id ? { ...item, isChecked: !item.isChecked } : item
-      )
+    setItemsLB(updated);
+    saveChecklistDataLB(updated);
+  };
+
+  const handleCheckboxToggleCA = (id: number) => {
+    const updated = itemsCA.map(item =>
+      item.id === id ? { ...item, isChecked: !item.isChecked } : item
     );
-    };
-  const handleCheckboxToggleAS = (id : number) => {
-    setItemsAS(
-      itemsAS.map((item) =>
-        item.id === id ? { ...item, isChecked: !item.isChecked } : item
-      )
+    setItemsCA(updated);
+    saveChecklistDataCA(updated);
+  };
+
+  const handleCheckboxToggleAS = (id: number) => {
+    const updated = itemsAS.map(item =>
+      item.id === id ? { ...item, isChecked: !item.isChecked } : item
     );
+    setItemsAS(updated);
+    saveChecklistDataAS(updated);
+  };
+
+  const resetChecklists = async () => {
+    try {
+      const resetCA = itemsCA.map(item => ({ ...item, isChecked: false }));
+      const resetLB = itemsLB.map(item => ({ ...item, isChecked: false }));
+      const resetAS = itemsAS.map(item => ({ ...item, isChecked: false }));
+
+      setItemsCA(resetCA);
+      setItemsLB(resetLB);
+      setItemsAS(resetAS);
+
+      await AsyncStorage.setItem(CHECKLIST_STORAGE_KEY_CA, JSON.stringify(resetCA));
+      await AsyncStorage.setItem(CHECKLIST_STORAGE_KEY_LB, JSON.stringify(resetLB));
+      await AsyncStorage.setItem(CHECKLIST_STORAGE_KEY_AS, JSON.stringify(resetAS));
+
+      console.log('Checklists reset.');
+    } catch (error) {
+      console.error('Failed to reset checklists', error);
+    }
+  };
+
+  useEffect(() => {
+    const loadChecklistData = async () => {
+      try {
+        const storedCA = await AsyncStorage.getItem(CHECKLIST_STORAGE_KEY_CA);
+        if (storedCA) setItemsCA(JSON.parse(storedCA));
+
+        const storedLB = await AsyncStorage.getItem(CHECKLIST_STORAGE_KEY_LB);
+        if (storedLB) setItemsLB(JSON.parse(storedLB));
+
+        const storedAS = await AsyncStorage.getItem(CHECKLIST_STORAGE_KEY_AS);
+        if (storedAS) setItemsAS(JSON.parse(storedAS));
+      } catch (e) {
+        console.error('Failed to load checklist data', e);
+      }
     };
 
-    return  (
-      <>
+    loadChecklistData();
+  }, []);
+
+  return (
+    <>
       {itemId === 'legs-back' && (
         <>
-        <Text style={[style_work.subtitle, {marginTop: 0}]}>Wajib</Text>
-            {itemsLB.filter(item => item.id < 9).map((item) => (
-              <TouchableOpacity
-                key={item.id}
-                style={style_work.item}
-                onPress={() => handleCheckboxToggleLB(item.id)}
-              >
-                <View style={[style_work.box]}>
-                  <View style={[style_work.checkbox, item.isChecked && style_work.checkedCheckbox]}>
-                    {item.isChecked && <Text style={style_work.checkMark}>✓</Text>}
-                  </View>
-                  <View style={{ flexDirection: 'column', width: '85%' }}>
-                    <Text style={[style_work.label, item.isChecked && style_work.checkedLabel]}>
-                      {item.label}
-                    </Text>
-                    <Text style={[style_work.desc, item.isChecked && style_work.checkeddesc]}>
-                      {item.desc}
-                    </Text>
-                  </View>
+          <Text style={[style_work.subtitle, { marginTop: 0 }]}>Wajib</Text>
+          {itemsLB.filter(item => item.id < 9).map((item) => (
+            <TouchableOpacity
+              key={item.id}
+              style={style_work.item}
+              onPress={() => handleCheckboxToggleLB(item.id)}
+            >
+              <View style={[style_work.box]}>
+                <View style={[style_work.checkbox, item.isChecked && style_work.checkedCheckbox]}>
+                  {item.isChecked && <Text style={style_work.checkMark}>✓</Text>}
                 </View>
-              </TouchableOpacity>
-        ))}
-        <Text style={[style_work.subtitle, {marginTop: 0}]}>Opsional</Text>
-            {itemsLB.filter(item => item.id >= 9).map((item) => (
-              <TouchableOpacity
-                key={item.id}
-                style={style_work.item}
-                onPress={() => handleCheckboxToggleLB(item.id)}
-              >
-                <View style={[style_work.box]}>
-                  <View style={[style_work.checkbox, item.isChecked && style_work.checkedCheckbox]}>
-                    {item.isChecked && <Text style={style_work.checkMark}>✓</Text>}
-                  </View>
-                  <View style={{ flexDirection: 'column', width: '85%' }}>
-                    <Text style={[style_work.label, item.isChecked && style_work.checkedLabel]}>
-                      {item.label}
-                    </Text>
-                    <Text style={[style_work.desc, item.isChecked && style_work.checkeddesc]}>
-                      {item.desc}
-                    </Text>
-                  </View>
+                <View style={{ flexDirection: 'column', width: '85%' }}>
+                  <Text style={[style_work.label, item.isChecked && style_work.checkedLabel]}>
+                    {item.label}
+                  </Text>
+                  <Text style={[style_work.desc, item.isChecked && style_work.checkeddesc]}>
+                    {item.desc}
+                  </Text>
                 </View>
-              </TouchableOpacity>
-        ))}
+              </View>
+            </TouchableOpacity>
+          ))}
+          <Text style={[style_work.subtitle, { marginTop: 0 }]}>Opsional</Text>
+          {itemsLB.filter(item => item.id >= 9).map((item) => (
+            <TouchableOpacity
+              key={item.id}
+              style={style_work.item}
+              onPress={() => handleCheckboxToggleLB(item.id)}
+            >
+              <View style={[style_work.box]}>
+                <View style={[style_work.checkbox, item.isChecked && style_work.checkedCheckbox]}>
+                  {item.isChecked && <Text style={style_work.checkMark}>✓</Text>}
+                </View>
+                <View style={{ flexDirection: 'column', width: '85%' }}>
+                  <Text style={[style_work.label, item.isChecked && style_work.checkedLabel]}>
+                    {item.label}
+                  </Text>
+                  <Text style={[style_work.desc, item.isChecked && style_work.checkeddesc]}>
+                    {item.desc}
+                  </Text>
+                </View>
+              </View>
+            </TouchableOpacity>
+          ))}
         </>
-      )}  
+      )}
       {itemId === 'chest-arms' && (
         <>
-        <Text style={[style_work.subtitle, {marginTop: 0}]}>Wajib</Text>
-            {itemsCA.filter(item => item.id < 9).map((item) => (
-              <TouchableOpacity
-                key={item.id}
-                style={style_work.item}
-                onPress={() => handleCheckboxToggleCA(item.id)}
-              >
-                <View style={[style_work.box]}>
-                  <View style={[style_work.checkbox, item.isChecked && style_work.checkedCheckbox]}>
-                    {item.isChecked && <Text style={style_work.checkMark}>✓</Text>}
-                  </View>
-                  <View style={{ flexDirection: 'column', width: '85%' }}>
-                    <Text style={[style_work.label, item.isChecked && style_work.checkedLabel]}>
-                      {item.label}
-                    </Text>
-                    <Text style={[style_work.desc, item.isChecked && style_work.checkeddesc]}>
-                      {item.desc}
-                    </Text>
-                  </View>
+          <Text style={[style_work.subtitle, { marginTop: 0 }]}>Wajib</Text>
+          {itemsCA.filter(item => item.id < 9).map((item) => (
+            <TouchableOpacity
+              key={item.id}
+              style={style_work.item}
+              onPress={() => handleCheckboxToggleCA(item.id)}
+            >
+              <View style={[style_work.box]}>
+                <View style={[style_work.checkbox, item.isChecked && style_work.checkedCheckbox]}>
+                  {item.isChecked && <Text style={style_work.checkMark}>✓</Text>}
                 </View>
-              </TouchableOpacity>
-        ))}
-        <Text style={[style_work.subtitle, {marginTop: 0}]}>Opsional</Text>
-            {itemsCA.filter(item => item.id >= 9).map((item) => (
-              <TouchableOpacity
-                key={item.id}
-                style={style_work.item}
-                onPress={() => handleCheckboxToggleCA(item.id)}
-              >
-                <View style={[style_work.box]}>
-                  <View style={[style_work.checkbox, item.isChecked && style_work.checkedCheckbox]}>
-                    {item.isChecked && <Text style={style_work.checkMark}>✓</Text>}
-                  </View>
-                  <View style={{ flexDirection: 'column', width: '85%' }}>
-                    <Text style={[style_work.label, item.isChecked && style_work.checkedLabel]}>
-                      {item.label}
-                    </Text>
-                    <Text style={[style_work.desc, item.isChecked && style_work.checkeddesc]}>
-                      {item.desc}
-                    </Text>
-                  </View>
+                <View style={{ flexDirection: 'column', width: '85%' }}>
+                  <Text style={[style_work.label, item.isChecked && style_work.checkedLabel]}>
+                    {item.label}
+                  </Text>
+                  <Text style={[style_work.desc, item.isChecked && style_work.checkeddesc]}>
+                    {item.desc}
+                  </Text>
                 </View>
-              </TouchableOpacity>
-        ))}
+              </View>
+            </TouchableOpacity>
+          ))}
+          <Text style={[style_work.subtitle, { marginTop: 0 }]}>Opsional</Text>
+          {itemsCA.filter(item => item.id >= 9).map((item) => (
+            <TouchableOpacity
+              key={item.id}
+              style={style_work.item}
+              onPress={() => handleCheckboxToggleCA(item.id)}
+            >
+              <View style={[style_work.box]}>
+                <View style={[style_work.checkbox, item.isChecked && style_work.checkedCheckbox]}>
+                  {item.isChecked && <Text style={style_work.checkMark}>✓</Text>}
+                </View>
+                <View style={{ flexDirection: 'column', width: '85%' }}>
+                  <Text style={[style_work.label, item.isChecked && style_work.checkedLabel]}>
+                    {item.label}
+                  </Text>
+                  <Text style={[style_work.desc, item.isChecked && style_work.checkeddesc]}>
+                    {item.desc}
+                  </Text>
+                </View>
+              </View>
+            </TouchableOpacity>
+          ))}
         </>
-      )}  
+      )}
       {itemId === 'abs-shoulders' && (
         <>
-        <Text style={[style_work.subtitle, {marginTop: 0}]}>Wajib</Text>
-            {itemsAS.filter(item => item.id < 8).map((item) => (
-              <TouchableOpacity
-                key={item.id}
-                style={style_work.item}
-                onPress={() => handleCheckboxToggleAS(item.id)}
-              >
-                <View style={[style_work.box]}>
-                  <View style={[style_work.checkbox, item.isChecked && style_work.checkedCheckbox]}>
-                    {item.isChecked && <Text style={style_work.checkMark}>✓</Text>}
-                  </View>
-                  <View style={{ flexDirection: 'column', width: '85%' }}>
-                    <Text style={[style_work.label, item.isChecked && style_work.checkedLabel]}>
-                      {item.label}
-                    </Text>
-                    <Text style={[style_work.desc, item.isChecked && style_work.checkeddesc]}>
-                      {item.desc}
-                    </Text>
-                  </View>
+          <Text style={[style_work.subtitle, { marginTop: 0 }]}>Wajib</Text>
+          {itemsAS.filter(item => item.id < 8).map((item) => (
+            <TouchableOpacity
+              key={item.id}
+              style={style_work.item}
+              onPress={() => handleCheckboxToggleAS(item.id)}
+            >
+              <View style={[style_work.box]}>
+                <View style={[style_work.checkbox, item.isChecked && style_work.checkedCheckbox]}>
+                  {item.isChecked && <Text style={style_work.checkMark}>✓</Text>}
                 </View>
-              </TouchableOpacity>
-        ))}
-        <Text style={[style_work.subtitle, {marginTop: 0}]}>Opsional</Text>
+                <View style={{ flexDirection: 'column', width: '85%' }}>
+                  <Text style={[style_work.label, item.isChecked && style_work.checkedLabel]}>
+                    {item.label}
+                  </Text>
+                  <Text style={[style_work.desc, item.isChecked && style_work.checkeddesc]}>
+                    {item.desc}
+                  </Text>
+                </View>
+              </View>
+            </TouchableOpacity>
+          ))}
+          <Text style={[style_work.subtitle, {marginTop: 0}]}>Opsional</Text>
             {itemsAS.filter(item => item.id >= 8).map((item) => (
               <TouchableOpacity
                 key={item.id}
