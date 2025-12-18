@@ -87,6 +87,8 @@ export function PrayText({ itemId }: { itemId: string }) {
         mystery = "Sedih";
       } else if (selectedMasa === 'Paskah') {
         mystery = "Mulia";
+      } else if (selectedMasa === 'Adven') {
+        mystery = "Gembira";
       } else {
         if ([2, 5].includes(dayIndex)) mystery = "Sedih";
         else if ([3, 0].includes(dayIndex)) mystery = "Mulia";
